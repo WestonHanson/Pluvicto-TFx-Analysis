@@ -25,31 +25,22 @@ This script integrates features from *[ichorCNA](https://github.com/GavinHaLab/i
 *Output can be specifed in the input file and processes can be found and edited in main.py*
 | Process    | Output Description |
 |----------- | ------------------ |
-| Process 1  | Outputs a CSV file per entropy function added to `entropy_functions_dict`. Saved to `/outputs/data-tables/entropy-tables-<sequencing_type>-<metric_to_use>`. |
-
-| Process 2 | Outputs entropy distribution and time sequence plots like entropy fold change or waterfall plots from C1-C2.  | 
-
-| Process 3 | Outputs a distribution plot for one or more entropy equations. |
-
-| Process 5 | Outputs Cox Hazard Ratio Plots and Kaplin-Meier Curves for specified chromosome and any covariates specified. |
-
-| Process 4 | Visualizes the relationship between complex structural varients (sv) and chromosome 8 entropy through box and swarm plots (`significant_svs` subdir for individual histograms of significant relationships between svs). |
-
-|&#x21B3;| Visualizes the relationship between complex structural varients (sv) and chromosome 8 entropy through histograms (stacked and individual histograms). |
-
-|&#x21B3;| Visualizes the relationship between complex structural varients (sv) and chromosome 8 entropy through stacked boxplot per patient. |
-
-| Process 5 | Logistic regression predicting gene level Titan copy number (CN) gain/loss vs CN neutral across all deep samples using entropy high/low accounting for TFx as predictor values - creates a CSV (sorted by entropy adj p-value). For significant genes, create a bar plot of top 20 genes by entropy coefficients and forrest plot of top 20 genes by entropy odds ratio. Does GSEA on gene list from logistic regression using odds ratio as weighting. 
-
-| Process 6 | Through a binary dataframe of presence of complex structural variances (SVs) by patient (used throughout Process 20), box plots of presence of any SVs vs no presense, and indivudual SVs, in relation to entropy scores are created.
-
-|&#x21B3;| Plots forest plot of odds ratios of SVs that are significantly correlated with entropy values from logistic regression.
-
-|&#x21B3;| Cox regression model forest plot accounting for TFx, quantifying the added prognostic information provided by SV presence on survival.
-
-|&#x21B3;| Kaplan-Meier curves seperated on different SVs.
-
-|&#x21B3;| Above analyses includes sub-directories corresponding to different data subsets, which can be selected in main.py by modifying the full_cohort and tfx_thresholding parameters.
+| Process 1 | Outputs the look up tables used in process 2 to create entropy scores. 
+| Process 2  | Outputs a CSV file per entropy function added to `entropy_functions_dict`. Saved to `/outputs/data-tables/entropy-tables-<sequencing_type>-<metric_to_use>`. 
+| Process 3 | Outputs entropy distribution and time sequence plots like entropy fold change or waterfall plots from C1-C2.  
+| Process 4 | Outputs a distribution plot for one or more entropy equations.
+| Process 5 | Outputs Cox Hazard Ratio Plots and Kaplin-Meier Curves for specified chromosome and any covariates specified. 
+| Process 6 | Visualizes the relationship between complex structural varients (sv) and chromosome 8 entropy through different qualitative plots. 
+| Process 7 | Logistic regression correlating gene level Titan copy number (CN) gain/loss vs CN neutral across all deep samples using entropy high/low accounting for TFx as predictor values - creates a CSV (sorted by entropy adj p-value). For significant genes, create a bar plot of top 20 genes by entropy coefficients and forrest plot of top 20 genes by entropy odds ratio. Does GSEA on gene list from logistic regression using odds ratio as weighting. 
+| Process 8 | Logistic regression correlating entropy and SVs. 
+| Process 9 | Compares different datasets between each other to determine if entropy is prognostic  or potentially predictive of Pluvicto.
+| Process 10 | Linear regression correlating entropy and SVs. 
+| Process 11 | Linear regression correlating gene level Titan copy number (CN) gain/loss vs CN neutral across all deep samples using entropy high/low accounting for TFx as predictor values - creates a CSV (sorted by entropy adj p-value). For significant genes, create a bar plot of top 20 genes by entropy coefficients and forrest plot of top 20 genes by entropy odds ratio. Does GSEA on gene list from logistic regression using odds ratio as weighting. 
+| Process 12 | Linear mixed effects model for entropy. 
+| Process 13 | Creating Manuscript supplemental tables.
+| Process 14 | More specific visualizations - an extention of process 3. 
+| Process 15 | Linear mixed effects model for specific genes CN increase/decrease over time.
+| Process 16 | Forest plot with all chromosomes on it (seperate models on one plot and all in one model).
 
 !! Most scatter plots or heatmaps are "responder" vs "non-responder" and that is a user defined variable based on cycles to progression that you can change in each process in main.py !!
 
