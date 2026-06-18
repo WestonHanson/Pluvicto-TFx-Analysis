@@ -386,14 +386,14 @@ if (use_tfbs) {
 # Set responder vs non-responder categories
 # *****************************************
 
-columns <- c("survival_days", "PSA_prog_days", "PSA_Progression", "tfx_prog_days", "T_cycles")
+columns <- c("survival_days", "PSA_prog_days", "PSA_Progression", "tfx_prog_days", "T_cycles", "PSA50")
 
 # Make rownames ids
 rownames(pluvicto_master_sheet) <- pluvicto_master_sheet$Sample_ID
 
 for (column in columns) {
   # For binary indicators 
-  if (column == "PSA_Progression") {
+  if (column == "PSA_Progression" | column == "PSA50") {
     pluvicto_master_sheet <- pluvicto_master_sheet %>% mutate(!!paste0("progression_group_", column) :=ifelse(.data[[column]] == 1 , "non-responder", "responder"))
     next
   }
@@ -451,6 +451,12 @@ for (column in columns) {
                                                                                             TRUE ~ NA_character_))
 }
 
+# Save data if you want
+save_sheet <- TRUE
+if (save_sheet) {
+  write.csv(pluvicto_master_sheet, file = "../data-files/pluvicto_survival_clean_with_response_groups.csv", row.names = TRUE)
+}
+
 # **************
 # START ANALYSIS
 # **************
@@ -468,10 +474,11 @@ progression_vars <- c(
   "progression_group_T_cycles_1_vs_6",          # 9
   "progression_group_T_cycles_2_vs_6",          # 10
   "progression_group_T_cycles_1_2_vs_5_6",      # 11
-  "progression_group_T_cycles_1-5_vs_6"         # 12
+  "progression_group_T_cycles_1-5_vs_6",        # 12
+  "progression_group_PSA50"                     # 13
 )
 
-progression_group_id <- progression_vars[9]
+progression_group_id <- progression_vars[13]
 
 volcano_plot_file_title <- volcano_plot_file_title_checkpoint
   
@@ -492,7 +499,7 @@ cat("responders: ",sum(progression_data$progression_group == "responder"))
 if (use_tfbs) {
   progression_data <- progression_data %>% filter(TFx_C1 >= 0.03)
   
-  volcano_plot_file_title <- paste(volcano_plot_file_title, "TFx_10_perc_cutoff", sep = "_")
+  volcano_plot_file_title <- paste(volcano_plot_file_title, "TFx_0.03_cutoff", sep = "_")
 } else {
   progression_data <- progression_data %>% filter(TFx_C1 >= 0.10)
 
@@ -775,19 +782,19 @@ if (use_tfbs) {
 # ***********************
 
 # Edit deg_results
-# save_table <- deg_results
-# rownames(save_table) <- NULL
-# 
-# file_name <- paste0("./outputs/data-tables/", volcano_plot_file_title, "deg_results.tsv")
-# 
-# write.table(save_table, 
-#             file_name, 
-#             sep = "\t", 
-#             row.names = FALSE, 
-#             col.names = !file.exists(file_name),
-#             quote = FALSE,
-#             append = file.exists(file_name)
-#             )
+save_table <- deg_results
+rownames(save_table) <- NULL
+
+file_name <- paste0("./outputs/data-tables/", volcano_plot_file_title, "_ctrl_tfx_deg_results.tsv")
+
+write.table(save_table,
+            file_name,
+            sep = "\t",
+            row.names = FALSE,
+            col.names = !file.exists(file_name),
+            quote = FALSE,
+            append = file.exists(file_name)
+            )
 
 
 
@@ -801,7 +808,7 @@ if (use_tfbs) {
   cutoff <- 0
 }
 deg_results$significant <- ifelse(
-  deg_results$adj.P.Val < 0.05 & !is.na(deg_results$adj.P.Val),
+  deg_results$P.Value < 0.05 & !is.na(deg_results$P.Value),
   ifelse(
     deg_results$logFC > cutoff, "Significantly up-regulated",
     ifelse(deg_results$logFC < cutoff,
@@ -812,7 +819,7 @@ deg_results$significant <- ifelse(
   "Not Significant"
 )
 
-sig_genes_volcano <- deg_results %>% dplyr::filter(adj.P.Val < 0.05 & !is.na(adj.P.Val))
+sig_genes_volcano <- deg_results %>% dplyr::filter(P.Value < 0.05 & !is.na(P.Value))
 
 # total_gene_dict[[volcano_plot_file_title]] <- save_table$gene
 
@@ -841,7 +848,7 @@ top_genes_volcano <- unique(rbind(top_up_regulated_genes_fc, top_down_regulated_
 
 prox1_gene_list <- c("PROX1")
 
-volcano_plot <- ggplot(deg_results, aes(x = logFC, y = -log10(adj.P.Val), color = significant)) +
+volcano_plot <- ggplot(deg_results, aes(x = logFC, y = -log10(P.Value), color = significant)) +
   geom_point(alpha = 0.6, size = 2.25) + # Increased from 1.5 to 2.25 (50% increase)
   scale_color_manual(values = c(
     "Significantly down-regulated" = "red",
@@ -852,10 +859,10 @@ volcano_plot <- ggplot(deg_results, aes(x = logFC, y = -log10(adj.P.Val), color 
   # labs(title = paste(paste0("Volcano Plot: ", contrast_position, " | ", volcano_plot_file_title)),
   #      x = "Log2 Fold Change (Negative = Down-regulated, Positive = Up-regulated)",
   #      y = "-Log10 Adjusted P-value", color = "significant") +
-  labs(title = paste(paste0("Volcano Plot: Pluvicto_DEG (Completed Trial vs Single Cycle)")),
+  labs(title = paste(paste0("Volcano Plot: Pluvicto_DEG (PSA50 Response vs Non-response)")),
        subtitle = "Controlled for TFx",
        x = "Log2 Fold Change (Negative = Down-regulated, Positive = Up-regulated)",
-       y = "-Log10 Adjusted P-value", color = "significant") +
+       y = "-Log10 P-value (unadjusted)", color = "significant") +
   geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
   # geom_vline(xintercept = c(-1, 1), linetype = "dashed") +
   # geom_vline(xintercept = c(-2, 2), linetype = "dashed") +

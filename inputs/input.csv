@@ -1,18 +1,8 @@
-genomic instability file paths:,
-tumor fraction file paths:,
-patient treatment progression:,
-central depth file path:,
-time point:,
-genomic instability and tumor fraction data processing:, False,
-central depth data processing:, False,
-combine data tables:, False,
-genomic instability and tumor fraction scatter plots:, False,
-genomic instability and tumor fraction line plots:, False,
-central depth pca plot:, False,
-central depth heatmap:, False,
-save heatmap data frames:, False,
-central depth differential activity:, False,
-central depth and tumor fraction density plot:, False,
-central depth and tumor fraction regression:, False,
-central depth and tumor fraction spearman rho plot:, False,
-cox forest plots of sig tfbs against clinical data:, False,
+genomic_instability_ulp_files:,/path/to/all_ULP_ichor_curated_paths.csv
+genomic_instability_deep_ichor_files:,/path/to/deep_ichor_curated_solution_seg_txt_paths.csv
+all_samples_tfx_and_ctdnaq_sheet:,/path/to/all_samples_TFx_ctDNAq.csv
+pluvicto_master_sheet:,/path/to/pluvicto_survival_clean.csv
+gene_annotation_list:,/path/to/GRCh38.p12.ensembl.gene.annotations.sorted.include.AREnhancer.txt
+gene_matrix_from_titan:,/path/to/PSMA_Sept2024Rerun_withRAD21_geneCN.txt,/path/to_2025/PSMA_Run2025_geneCN.txt
+purity_ploidy_from_titan:,/path/to/purity_ploidy_202051007.txt,/path/to_2025/purity_ploidy.txt
+prostate_specific_cancer_gene_list:,/path/to/20230823_Composite_PC_GeneList.txt
