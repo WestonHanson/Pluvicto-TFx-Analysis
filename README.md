@@ -1,4 +1,4 @@
-<img src="misc/genome.png" width="140" align="left">
+<img src="misc/liquid-biospy-and-genome.png" width="140" align="left">
 
 # Copy Number Analysis via Chromosome Shannon Entropy
 
