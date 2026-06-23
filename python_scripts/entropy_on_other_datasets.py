@@ -327,10 +327,10 @@ def main():
 
     # Build dictionary for other projects (a list of path to directory, tool used (for file structure - None means its a csv), and outcome data)
     projects = {
-        # 'radium223': ['/fh/fast/ha_g/projects/Collaborations/Choudhury_Lab/Radium223_2025/GenomicsAnalysis/ULP_ichorCNA_curated/Radium-223/', 'titan', '/fh/fast/ha_g/projects/Collaborations/Choudhury_Lab/Radium223_2025/sample_manifest.csv'],
-        'docetaxel': ['/fh/fast/ha_g/user/dchen4/ichorCNA_analysis/docetaxel_cabazitaxel_results/results/ichorCNA/', 'ichor', '/fh/fast/ha_g/user/whanson/PSMA_Lutetium_whanson/genome_instability/data-files/2022_09_13_Docetaxel_cabazitaxel_database_with_TFx_for_Gavin.csv'],
-        # 'WCDT': ['/fh/fast/ha_g/user/whanson/PSMA_Lutetium_whanson/genome_instability/data-files/jci_insight_161370_sdt1_S1I.csv', None, '/fh/fast/ha_g/user/whanson/PSMA_Lutetium_whanson/genome_instability/data-files/012326_WCDT_mCRPC_outcomes_w_assay_info.csv']
-    }
+        'project_1': ['/path/to/project_1/', 'titan', '/path/to/project_1_sample_manifest.csv'],
+        'project_2': ['/path/to/project_2.csv'],
+        'project_3': ['/path/to/project_3.csv', None, '/path/to/project_3_sample_manifest.csv']
+        }
 
     sequencing_type = "ulp_curated_seg_entropy_mod"
     metric_to_use = "Corrected_Copy_Number"
@@ -339,22 +339,22 @@ def main():
     # Process dataframes if needed 
     # ----------------------------
 
-    # --- WCDT ---
-    if 'WCDT' in projects:
-        # Add purity column to WCDT outcome data
-        wcdt_df = add_column_to_dataframe(df_1_path=projects['WCDT'][2], df_1_id_col='patient_id', df_2_path='/fh/fast/ha_g/user/whanson/PSMA_Lutetium_whanson/genome_instability/data-files/jci_insight_161370_sdt1_S1B.csv', df_2_id_col='Sample', df_2_value_col='Tumor purity')
+    # --- project_3 ---
+    if 'project_3' in projects:
+        # Add purity column to project_3 outcome data
+        project_3_df = add_column_to_dataframe(df_1_path=projects['project_3'][2], df_1_id_col='patient_id', df_2_path='/path/to/project_3.csv', df_2_id_col='Sample', df_2_value_col='Tumor purity')
 
-        save_path = '/fh/fast/ha_g/user/whanson/PSMA_Lutetium_whanson/genome_instability/data-files/012326_WCDT_mCRPC_outcomes_w_assay_info_with_overall_survival.csv'
+        save_path = '/path/to/project_3_sample_manifest_with_overall_survival.csv'
         if not os.path.isfile(save_path):
-            wcdt_df.to_csv(save_path, index=False)
+            project_3_df.to_csv(save_path, index=False)
         
         # Update projects dictionary 
-        projects['WCDT'][2] = save_path
+        projects['project_3'][2] = save_path
 
-    # --- radium223 ---
-    if 'radium223' in projects:
-    # Add purity column to WCDT outcome data
-        radium_df = add_column_to_dataframe(df_1_path=projects['radium223'][2], df_1_id_col='Pre_treatment_specimen', df_2_path='/fh/fast/ha_g/user/whanson/PSMA_Lutetium_whanson/genome_instability/data-files/radium223_metadata.csv', df_2_id_col='Pre_ID', df_2_value_col='Date_Death')
+    # --- project_1 ---
+    if 'project_1' in projects:
+    # Add purity column to project_3 outcome data
+        radium_df = add_column_to_dataframe(df_1_path=projects['project_1'][2], df_1_id_col='Pre_treatment_specimen', df_2_path='/path/to/project_1_metadata.csv', df_2_id_col='Pre_ID', df_2_value_col='Date_Death')
         
         # Add an event column
         # radium_df["Completed_Tx_binary"] = (radium_df['Completed_Tx'] == 'Y').astype(int)
@@ -364,12 +364,12 @@ def main():
             (radium_df["Completed_Tx"] == "Y").astype(int)
         )
 
-        save_path = '/fh/fast/ha_g/user/whanson/PSMA_Lutetium_whanson/genome_instability/data-files/radium223_manifest_with_overall_survival.csv'
+        save_path = '/path/to/project_1_sample_manifest_with_overall_survival.csv'
         if not os.path.isfile(save_path):
             radium_df.to_csv(save_path, index=False)
         
         # Update projects dictionary 
-        projects['radium223'][2] = save_path
+        projects['project_1'][2] = save_path
 
     #########################################
     # PROCESS PROJECT DIRECTORIES FOR ENTROPY 
@@ -391,12 +391,12 @@ def main():
                 entropy_equation_function = function
 
                 if tool is None:
-                    process_entropy_for_csv(csv_path=directory, patient_dict=patient_dict, id_col="Sample", chr_col="Chromosome", metric_to_use=metric_to_use, sequencing_type=sequencing_type, tool=tool, entropy_equation_function=entropy_equation_function, sub_set_col='Dataset', sub_set_filter='WCDT101')
+                    process_entropy_for_csv(csv_path=directory, patient_dict=patient_dict, id_col="Sample", chr_col="Chromosome", metric_to_use=metric_to_use, sequencing_type=sequencing_type, tool=tool, entropy_equation_function=entropy_equation_function, sub_set_col='Dataset', sub_set_filter='project_3101')
 
                 else:
                     process_entropy_per_chromosome_modified(directory=directory, patient_dict=patient_dict, metric_to_use=metric_to_use, sequencing_type=sequencing_type, tool=tool, entropy_equation_function=entropy_equation_function)
 
-                if project == 'docetaxel':
+                if project == 'project_2':
                     create_entropy_data_table_per_chromosome_modified(patient_dict=patient_dict, output_sub_dir=f'other-datasets/{project}/entropy-tables-{sequencing_type}-{metric_to_use}', csv_file_name=f"{function_label}.csv", output_path=output_path, metric_to_use="Corrected_Copy_Number", sequencing_type=sequencing_type, cycle_bool=False)
                     
                 else:
@@ -416,7 +416,7 @@ def main():
         for projects_idx, (project, arr) in enumerate(projects.items()):
 
             # Some datasets dont actually have a cycle but they do have a cycle column
-            if project in ['radium223']:
+            if project in ['project_1']:
                 cycle_filter = "pre"
             else:
                 cycle_filter = None
@@ -450,17 +450,17 @@ def main():
         for projects_idx, (project, arr) in enumerate(projects.items()):
             outcome_data_path = arr[2]
 
-            if outcome_data_path is not None and project != "docetaxel":
+            if outcome_data_path is not None and project != "project_2":
 
                  # Some datasets dont actually have a cycle but they do have a cycle column
-                if project == 'radium223':
+                if project == 'project_1':
                     patient_id_col = 'Pre_treatment_specimen'
                     cycle_filter = "pre"
                     event_col = 'Completed_Tx_binary'
                     time_to_event_col = 'Date_Death'
                     covariate_list = ["preTFx"]
 
-                elif project == 'WCDT':
+                elif project == 'project_3':
                     patient_id_col = 'patient_id'
                     cycle_filter = None
                     event_col = 'OS_status'
@@ -514,7 +514,7 @@ def main():
                     )
 
             # If project does not have OS a logistic regression needs to be computed instead of a survival analysis
-            elif project == "docetaxel":
+            elif project == "project_2":
                 # Read in outcome_data and entropy data and mege
                 outcome_data = pd.read_csv(outcome_data_path, index_col=0, encoding="latin1")
 
@@ -530,7 +530,7 @@ def main():
                     tfx_column = merged_df[['patient_id', 'tumor_fraction']]
 
                     # Subset merged_df to only columns you want and format
-                    merged_df.rename(columns={'Resistance; Y = YES; N = NO': 'resistance', 'PSA decline ³ 50% within 16 weeks after docetaxel start; Y = YES; N = NO': 'psa_50_response'}, inplace=True)
+                    merged_df.rename(columns={'Resistance; Y = YES; N = NO': 'resistance', 'PSA decline ³ 50% within 16 weeks after project_2 start; Y = YES; N = NO': 'psa_50_response'}, inplace=True)
                     filtered_df = merged_df[['patient_id', 'resistance', 'psa_50_response', 'chr8']]
 
                     filtered_df['resistance'] = (filtered_df['resistance'] == 'Y').astype(int)
@@ -570,7 +570,7 @@ def main():
                     'curated_solution_path': list_of_files
                 })
 
-                save_path = f'/fh/fast/ha_g/user/whanson/PSMA_Lutetium_whanson/genome_instability/scripts/outputs/data-tables/gene_matrix_from_ichor/{project}_ichor_file_list.csv'
+                save_path = f'/path/to/{project}_ichor_file_list.csv'
                 if not os.path.isfile(save_path):
                     df.to_csv(save_path, index=False)
 
@@ -582,12 +582,12 @@ def main():
 
         # Dictionary of ichor gene CN matrix path and project meta data
         gene_matrix_path_list = {
-            'radium223': ['/fh/fast/ha_g/user/whanson/PSMA_Lutetium_whanson/genome_instability/scripts/outputs/data-tables/gene_matrix_from_ichor/radium223_ichor_geneCN.txt', '/fh/fast/ha_g/projects/Collaborations/Choudhury_Lab/Radium223_2025/sample_manifest.csv', '/fh/fast/ha_g/projects/Collaborations/Choudhury_Lab/Radium223_2025/GenomicsAnalysis/ULP_ichorCNA_curated/Radium-223/ichor_curation_summary.csv'],
-            'docetaxel': ['/fh/fast/ha_g/user/whanson/PSMA_Lutetium_whanson/genome_instability/scripts/outputs/data-tables/gene_matrix_from_ichor/docetaxel_ichor_geneCN.txt', '/fh/fast/ha_g/user/whanson/PSMA_Lutetium_whanson/genome_instability/data-files/2022_09_13_Docetaxel_cabazitaxel_database_with_TFx_for_Gavin.csv'],
+            'project_1': ['/path/to/project_1_ichor_geneCN.txt', '/fh/fast/ha_g/projects/Collaborations/Choudhury_Lab/project_1_2025/sample_manifest.csv', '/fh/fast/ha_g/projects/Collaborations/Choudhury_Lab/project_1_2025/GenomicsAnalysis/ULP_ichorCNA_curated/Radium-223/ichor_curation_summary.csv'],
+            'project_2': ['/path/to/project_2_ichor_geneCN.txt', '/path/to/2022_09_13_project_2_cabazitaxel_database_with_TFx_for_Gavin.csv'],
         }
 
-        gene_annotation_list = '/fh/fast/ha_g/grp/reference/GRCh38/gene_lists/GRCh38.p12.ensembl.gene.annotations.sorted.include.AREnhancer.txt'
-        prostate_specific_cancer_gene_list = '/fh/fast/ha_g/projects/ProstateTAN/analysis_CN-SV/JASMINE/Plots/data/20230823_Composite_PC_GeneList.txt'
+        gene_annotation_list = '/path/to/GRCh38.p12.ensembl.gene.annotations.sorted.include.AREnhancer.txt'
+        prostate_specific_cancer_gene_list = '/path/to/20230823_Composite_PC_GeneList.txt'
 
         # Set CSV file variable to use in process
         for csv_path in entropy_csv_list:
@@ -596,7 +596,7 @@ def main():
 
                 # Process Gene matrix
                 filtered_gene_list = filter_gene_annotation_list(gene_annotation_list, "Chr", [8], "Gene")
-                if project == 'radium223':
+                if project == 'project_1':
                     cycle = "pre"
                     full_id = True
                     
@@ -628,7 +628,7 @@ def main():
                     # Rename ploidy column
                     gene_matrix.rename(columns={'Ploidy': 'ploidy'}, inplace=True)
 
-                elif project == 'docetaxel':
+                elif project == 'project_2':
                     cycle = None
                     full_id = False
                     gene_matrix = final_gene_matrix_modified(
@@ -671,12 +671,12 @@ def main():
                 direction = "gain" # 'gain' or 'loss'
                 tfx_thresholding = False
                 encoding=None
-                if project == 'docetaxel':
+                if project == 'project_2':
                     meta_data_id_column = "Sample label"
                     tfx_col = 'tumor_fraction'
                     encoding="latin1"
                     normalize_by_ploidy = True
-                elif project == 'radium223':
+                elif project == 'project_1':
                     meta_data_id_column = "Pre_treatment_specimen"
                     tfx_col = 'preTFx'
                     normalize_by_ploidy = True
