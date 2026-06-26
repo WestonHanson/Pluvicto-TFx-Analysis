@@ -35,6 +35,9 @@ def get_input_file(input_path):
             elif tag == "pluvicto_master_sheet:":
                 input_map["pluvicto_master_sheet"] = [x.strip() for x in delimited_line[1:] if x.strip() != ""]
 
+            elif tag == "complex_sv_calls_and_chr8_entropy:":
+                input_map["complex_sv_calls_and_chr8_entropy"] = [x.strip() for x in delimited_line[1:] if x.strip() != ""]
+
             elif tag == "gene_annotation_list:":
                 input_map["gene_annotation_list"] = [x.strip() for x in delimited_line[1:] if x.strip() != ""]
 
@@ -70,15 +73,40 @@ def main(args):
     sequencing_type = "deep_ichor_seg_transitions"
 
     # Processes samples if user selects True
-
     if sequencing_type not in ["ulp", "deep", "ulp_curated", "ulp_curated_seg", "ulp_curated_seg_entropy_mod", "ulp_curated_seg_subclone", "ulp_curated_seg_transitions", "ulp_curated_seg_transitions_mod", "deep_seg", 'deep_seg_entropy_mod', 'deep_seg_500kb', 'deep_seg_10snp', 'deep_seg_20snp', 'deep_ichor_seg_v1', 'deep_ichor_seg_v2', 'deep_ichor_seg_v1_entropy_mod', 'deep_ichor_seg_v2_entropy_mod', 'deep_ichor_v1', 'deep_ichor_seg', 'deep_ichor_seg_transitions']:
         print("Wrong sequencing type!")
         return    
 
-    # ===============
+    # ==============
     # Process 1:
-    # ===============
+    # ==============
     if args.process1 == "True":
+
+        metric_to_use = "Corrected_Copy_Number"
+
+        input_dirs = input_map[f"genomic_instability_{sequencing_type.split('_seg')[0]}_files"]
+
+        patient_df = create_copy_number_profile_dataframe(
+            dir_list=input_dirs, 
+            metric_to_use=metric_to_use, 
+            sequencing_type=sequencing_type
+        )
+
+        save_path = f'{output_path}/data-tables/cohort-copy-number-profiles-dataframes'
+        file_name = f'{sequencing_type}-{metric_to_use}-cohort-copy_number_profiles'
+
+        os.makedirs(save_path, exist_ok=True)
+
+        patient_df.to_pickle(
+            f'{save_path}/{file_name}.pkl',
+        )
+
+        print(f'Saved cohort copy number profiles to {save_path}/{file_name}.pkl')
+
+    # ===============
+    # Process 2:
+    # ===============
+    if args.process2 == "True":
 
         # Dictionary of functions (list of entropy functions in entropy_equation_functions.py)
         entropy_functions_dict = {
@@ -114,8 +142,7 @@ def main(args):
             for (patient, chromosome), group in patient_cn_df.groupby(['sample_id', 'chr']):
                 # Instantiate matrix with 0s
                 count_matrix = np.zeros((1000, 1000), dtype=int)
-                print(count_matrix)
-                sys.exit(0)
+                
                 # Reset group index
                 group.reset_index(drop=True, inplace=True)
 
@@ -172,9 +199,9 @@ def main(args):
             create_entropy_data_table_per_chromosome_v2(patient_dict, f'entropy-tables-{sequencing_type}-{metric_to_use}', f"{function_label}.csv", output_path, "Corrected_Copy_Number", sequencing_type)
 
     # ===============
-    # Process 2:
+    # Process 3:
     # ===============
-    if args.process2 == "True":
+    if args.process3 == "True":
 
         entropy_functions_dict = {
             "base_entropy_hn_cohort_normalized": "base_entropy_hn_cohort_normalized_per_chr_table",
@@ -536,9 +563,9 @@ def main(args):
             print("")
         
     # ===============
-    # Process 3:
+    # Process 4:
     # ===============
-    if args.process3 == "True":
+    if args.process4 == "True":
 
         csv_file_comapision_dict = {
             "base_entropy_hn_cohort_normalized": ["base_entropy_hn_cohort_normalized_per_chr_table.csv"],
@@ -594,9 +621,9 @@ def main(args):
         # )
 
     # ===============
-    # Process 4:
+    # Process 5:
     # ===============
-    if args.process4 == "True":
+    if args.process5 == "True":
 
         # List of csv files to process
         entropy_csv_list = [
@@ -787,9 +814,9 @@ def main(args):
             )
 
     # ==============
-    # Process 5:
+    # Process 6:
     # ==============
-    if args.process5 == "True":
+    if args.process6 == "True":
         # List of csv files to process
         entropy_csv_list = [
             'base_entropy_hn_normalized_per_chr_table'
@@ -817,7 +844,7 @@ def main(args):
                 "C1",
             )
 
-            dir_path = f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process18_outputs/{csv_path}'
+            dir_path = f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process6_outputs/{csv_path}'
 
             complex_sv_and_entropy_visualization(
                 complex_svs_and_new_entropy_df, 
@@ -872,9 +899,9 @@ def main(args):
             )
 
     # ==============
-    # Process 6:
+    # Process 7:
     # ==============
-    if args.process6 == "True":
+    if args.process7 == "True":
 
         # List of csv files to process
         entropy_csv_list = [
@@ -941,7 +968,7 @@ def main(args):
             # Plot coefficients on bar plots
             coefficient_barplot(
                 output_path=output_path,
-                sub_dir_path=f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process19_outputs/gene_matrix_and_entropy/{csv_path}/logistic_regression",
+                sub_dir_path=f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process7_outputs/gene_matrix_and_entropy/{csv_path}/logistic_regression",
                 model_results=model_results['coefficients'],
                 coefficent_column="entropy_response_coefficient",
                 adj_pvalue_column="entropy_response_adj_pvalue",
@@ -954,7 +981,7 @@ def main(args):
             # Plot odds ratios on forest plots
             odds_ratio_forest_plot(
                 output_path=output_path,
-                sub_dir_path=f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process19_outputs/gene_matrix_and_entropy/{csv_path}/logistic_regression",
+                sub_dir_path=f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process7_outputs/gene_matrix_and_entropy/{csv_path}/logistic_regression",
                 model_results=model_results['coefficients'],
                 coefficent_column="entropy_response_odds_ratio",
                 adj_pvalue_column="entropy_response_adj_pvalue",
@@ -974,7 +1001,7 @@ def main(args):
             #Plot odds ratios on forest plots subsetted to gene list
             odds_ratio_forest_plot(
                 output_path=output_path,
-                sub_dir_path=f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process19_outputs/gene_matrix_and_entropy/{csv_path}/logistic_regression",
+                sub_dir_path=f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process7_outputs/gene_matrix_and_entropy/{csv_path}/logistic_regression",
                 model_results=model_results['coefficients'],
                 coefficent_column="entropy_response_odds_ratio",
                 adj_pvalue_column="entropy_response_adj_pvalue",
@@ -990,7 +1017,7 @@ def main(args):
             try:
                 GSEA(
                     output_path=output_path,
-                    sub_dir_path=f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process19_outputs/gene_matrix_and_entropy/{csv_path}/logistic_regression",
+                    sub_dir_path=f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process7_outputs/gene_matrix_and_entropy/{csv_path}/logistic_regression",
                     model_results=model_results['coefficients'],
                     gsea_ranking_column="entropy_response_odds_ratio",
                     adj_pvalue_column="entropy_response_adj_pvalue",
@@ -1003,9 +1030,9 @@ def main(args):
                 print(f"GSEA could not run: {e}")
 
     # ==============
-    # Process 7:
+    # Process 8:
     # ==============
-    if args.process7 == "True":
+    if args.process8 == "True":
 
         # List of csv files to process
         entropy_csv_list = [
@@ -1145,7 +1172,7 @@ def main(args):
                 
                 complex_sv_and_entropy_stacked_histogram_per_sv(
                     output_path=output_path, 
-                    sub_dir=f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process20_outputs/{csv_path.replace('_per_chr_table', '')}/complex_svs_vs_entropy_barplots", 
+                    sub_dir=f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process8_outputs/{csv_path.replace('_per_chr_table', '')}/complex_svs_vs_entropy_barplots", 
                     df=binary_df, 
                     entropy_column=f'chr{chromosome}',
                     title="Stacked Barplot of Complex SVs",
@@ -1157,7 +1184,7 @@ def main(args):
                 binary_df_stripped = binary_df[[col for col in binary_df.columns if col not in ['entropy_group', f'chr{chromosome}']]]
                 horizontal_bar_plot(
                     output_path=output_path, 
-                    sub_dir=f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process20_outputs/{csv_path.replace('_per_chr_table', '')}/complex_svs_vs_entropy_barplots", 
+                    sub_dir=f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process8_outputs/{csv_path.replace('_per_chr_table', '')}/complex_svs_vs_entropy_barplots", 
                     df=binary_df_stripped, 
                     title="Barplot of Complex SVs Counts", 
                     file_name=f'counts_of_complex_svs{sv_grouped_tag}_horizontal_barplot{all_sv_tag}', 
@@ -1166,7 +1193,7 @@ def main(args):
                 )
 
                 proportional_stacked_histogram_per_sv(
-                    output_path=f"{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process20_outputs/{csv_path.replace('_per_chr_table', '')}/complex_svs_vs_entropy_barplots", 
+                    output_path=f"{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process8_outputs/{csv_path.replace('_per_chr_table', '')}/complex_svs_vs_entropy_barplots", 
                     df=binary_df, 
                     id_column='patient_id',
                     entropy_column=f'chr{chromosome}',
@@ -1195,7 +1222,7 @@ def main(args):
                 # SV and high entropy correlation
                 sv_entorpy_correlation(
                     output_path, 
-                    f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process20_outputs/{csv_path.replace('_per_chr_table', '')}/complex_svs{sv_grouped_tag}_vs_entropy_boxplots", 
+                    f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process8_outputs/{csv_path.replace('_per_chr_table', '')}/complex_svs{sv_grouped_tag}_vs_entropy_boxplots", 
                     binary_df.copy(), 
                     f'chr{chromosome}', 
                     high_entropy, 
@@ -1219,7 +1246,7 @@ def main(args):
                     title='Chr8 Entropy vs Number of Complex SVs Per Patient', 
                     xlabel='Number of Complex SVs', 
                     ylabel='Chr8 Entropy', 
-                    out_dir=f"{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process20_outputs/{csv_path.replace('_per_chr_table', '')}/scatter_plots", 
+                    out_dir=f"{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process8_outputs/{csv_path.replace('_per_chr_table', '')}/scatter_plots", 
                     file_name=f"chr{chromosome}_entropy_vs_sv_count_per_patient_scatter_plot{all_sv_tag}",
                     jitter=True
                 )
@@ -1233,7 +1260,7 @@ def main(args):
                     title='Chr8 Entropy vs Number of Complex SVs Per Patient (at least one SV)', 
                     xlabel='Number of Complex SVs', 
                     ylabel='Chr8 Entropy', 
-                    out_dir=f"{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process20_outputs/{csv_path.replace('_per_chr_table', '')}/scatter_plots", 
+                    out_dir=f"{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process8_outputs/{csv_path.replace('_per_chr_table', '')}/scatter_plots", 
                     file_name=f"chr{chromosome}_entropy_vs_sv_count_filtered_per_patient_scatter_plot{all_sv_tag}",
                     jitter=True
                 )
@@ -1248,7 +1275,7 @@ def main(args):
                     title='Chr8 Entropy vs Number of Complex SVs Per Patient', 
                     xlabel='Number of Complex SVs', 
                     ylabel='Chr8 Entropy', 
-                    out_dir=f"{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process20_outputs/{csv_path.replace('_per_chr_table', '')}/box_plots", 
+                    out_dir=f"{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process8_outputs/{csv_path.replace('_per_chr_table', '')}/box_plots", 
                     file_name=f"chr{chromosome}_entropy_vs_sv_count_per_patient_box_plot{all_sv_tag}",
                     jitter=True,
                     compare_groups=bar_plot_groups
@@ -1265,7 +1292,7 @@ def main(args):
 
                 odds_ratio_forest_plot(
                     output_path, 
-                    f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process20_outputs/{csv_path.replace('_per_chr_table', '')}/complex_svs_vs_entropy_forest_plots/logistic_regression", 
+                    f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process8_outputs/{csv_path.replace('_per_chr_table', '')}/complex_svs_vs_entropy_forest_plots/logistic_regression", 
                     model_results['coefficients'], 
                     "entropy_response_odds_ratio", 
                     "entropy_response_adj_pvalue", 
@@ -1289,9 +1316,9 @@ def main(args):
                 create_sv_kaplan_meier_plots(output_path, input_map["pluvicto_master_sheet"][0], csv_path, binary_df, sequencing_type, high_entropy, tfx_thresholding_tag, sv_grouped_tag)
 
     # ==============
-    # Process 8:
+    # Process 9:
     # ==============
-    if args.process8 == "True":
+    if args.process9 == "True":
 
         # Dictionary of other projects (a list of: outcome data)
         projects = {
@@ -1379,7 +1406,7 @@ def main(args):
                 # Plot merged models
                 odds_ratio_forest_plot(
                     output_path, 
-                    f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process21_outputs/pluvicto_vs_docetaxel/{label}/logistic-regression", 
+                    f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process9_outputs/pluvicto_vs_docetaxel/{label}/logistic-regression", 
                     merged_model_coefficients, 
                     "entropy_response_odds_ratio", 
                     "entropy_response_adj_pvalue", 
@@ -1474,7 +1501,7 @@ def main(args):
                 # Plot merged models
                 odds_ratio_forest_plot(
                     output_path, 
-                    f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process21_outputs/pluvicto_vs_radium223/{label}/logistic-regression", 
+                    f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process9_outputs/pluvicto_vs_radium223/{label}/logistic-regression", 
                     merged_model_coefficients, 
                     "entropy_response_odds_ratio", 
                     "entropy_response_adj_pvalue", 
@@ -1576,7 +1603,7 @@ def main(args):
                 # Plot merged models
                 odds_ratio_forest_plot(
                     output_path, 
-                    f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process21_outputs/radium223_vs_docetaxel/{label}/logistic-regression", 
+                    f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process9_outputs/radium223_vs_docetaxel/{label}/logistic-regression", 
                     model_results_project, 
                     "entropy_response_odds_ratio", 
                     "entropy_response_adj_pvalue", 
@@ -1636,7 +1663,7 @@ def main(args):
                     title=f'{df_1_tag.title()} vs {df_2_tag.title()}: Chr8 Entropy', 
                     xlabel=f'Datasets', 
                     ylabel=f'Chr8 Entropy', 
-                    out_dir=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process21_outputs/{df_1_tag}_vs_{df_2_tag}_vs_{df_3_tag}/{label}/distribution_plots', 
+                    out_dir=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process9_outputs/{df_1_tag}_vs_{df_2_tag}_vs_{df_3_tag}/{label}/distribution_plots', 
                     file_name=f'{df_1_tag}_vs_{df_2_tag}_vs_{df_3_tag}_chr8_entropy_volin_plot'
                 )
 
@@ -1651,7 +1678,7 @@ def main(args):
                     title=f'{df_1_tag.title()} vs {df_2_tag.title()}: Chr8 Entropy', 
                     xlabel=f'Chr8 Entropy', 
                     ylabel=f'Density', 
-                    out_dir=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process21_outputs/{df_1_tag}_vs_{df_2_tag}_vs_{df_3_tag}/{label}/distribution_plots', 
+                    out_dir=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process9_outputs/{df_1_tag}_vs_{df_2_tag}_vs_{df_3_tag}/{label}/distribution_plots', 
                     file_name=f'{df_1_tag}_vs_{df_2_tag}_vs_{df_3_tag}_chr8_entropy_density_distribution_plot'
                 )
 
@@ -1768,7 +1795,7 @@ def main(args):
                 # Filter froest_df
                 forest_df = forest_df.loc[forest_df.index.isin(['Pluvicto_chr8_entropy', 'Docetaxel_chr8_entropy'])]
 
-                file_path = f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process21_outputs/pluvicto_vs_docetaxel/cox_hardard_ratios/entropy_plots/{csv_path}'
+                file_path = f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process9_outputs/pluvicto_vs_docetaxel/cox_hardard_ratios/entropy_plots/{csv_path}'
                 if tfx_threshold:
                     file_path = file_path + '/tfx_threshold'
                 file_name=f'forest_plot_combined_entropy'
@@ -1782,9 +1809,9 @@ def main(args):
                 )
 
     # ==============
-    # Process 9:
+    # Process 10:
     # ==============
-    if args.process9 == "True":
+    if args.process10 == "True":
         # List of csv files to process
         entropy_csv_list = [
             "base_entropy_hn_normalized_per_chr_table",
@@ -1880,7 +1907,7 @@ def main(args):
 
             # Create a forest plot with each structural variant 
             coefficients_forest_plot(
-                output_path=f"{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process22_outputs/complex_svs_vs_entropy_forest_plots/{csv_path}/linear_regression",
+                output_path=f"{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process10_outputs/complex_svs_vs_entropy_forest_plots/{csv_path}/linear_regression",
                 df=model_df,
                 feature_column='feature',
                 coefficent_column="coefficient",
@@ -1894,9 +1921,9 @@ def main(args):
             )
 
     # ==============
-    # Process 10:
+    # Process 11:
     # ==============
-    if args.process10 == "True":
+    if args.process11 == "True":
 
         # List of csv files to process
         entropy_csv_list = [
@@ -1963,7 +1990,7 @@ def main(args):
             # Plot coefficients on bar plots
             coefficient_barplot(
                 output_path=output_path,
-                sub_dir_path=f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process23_outputs/gene_matrix_and_entropy/{csv_path}/linear_regression",
+                sub_dir_path=f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process11_outputs/gene_matrix_and_entropy/{csv_path}/linear_regression",
                 model_results=model_results['coefficients'],
                 coefficent_column="coefficient",
                 adj_pvalue_column="adj_pvalue",
@@ -1978,7 +2005,7 @@ def main(args):
 
             # Create a forest plot with each gene 
             coefficients_forest_plot(
-                output_path=f"{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process23_outputs/gene_matrix_and_entropy/{csv_path}/linear_regression",
+                output_path=f"{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process11_outputs/gene_matrix_and_entropy/{csv_path}/linear_regression",
                 df=model_df,
                 feature_column='feature',
                 coefficent_column="coefficient",
@@ -1999,7 +2026,7 @@ def main(args):
             
             #Plot odds ratios on forest plots subsetted to gene list
             coefficients_forest_plot(
-                output_path=f"{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process23_outputs/gene_matrix_and_entropy/{csv_path}/linear_regression",
+                output_path=f"{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process11_outputs/gene_matrix_and_entropy/{csv_path}/linear_regression",
                 df=model_df,
                 feature_column='feature',
                 coefficent_column="coefficient",
@@ -2017,7 +2044,7 @@ def main(args):
             try:
                 GSEA(
                     output_path=output_path,
-                    sub_dir_path=f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process23_outputs/gene_matrix_and_entropy/{csv_path}/linear_regression",
+                    sub_dir_path=f"entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process11_outputs/gene_matrix_and_entropy/{csv_path}/linear_regression",
                     model_results=model_results['coefficients'],
                     gsea_ranking_column="coefficient",
                     adj_pvalue_column="adj_pvalue",
@@ -2030,9 +2057,9 @@ def main(args):
                 print(f"GSEA could not run: {e}")
     
     # ==============
-    # Process 11:
+    # Process 12:
     # ==============
-    if args.process11 == "True":
+    if args.process12 == "True":
         # List of csv files to process
         entropy_csv_list = [
             "base_entropy_hn_cohort_normalized_per_chr_table",
@@ -2108,7 +2135,7 @@ def main(args):
 
             linear_mixed_effects_forest_plot(
                 model_result=model_result,
-                output_path=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process24_outputs/{csv_path}/linear_mixed_effects_model/response_category_{response_category}/cycles_{cycles_to_use[0][-2:]}_to_{cycles_to_use[len(cycles_to_use)-1][-2:]}/tfx_threshold_{tfx_cutoff*100}_prct',
+                output_path=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process12_outputs/{csv_path}/linear_mixed_effects_model/response_category_{response_category}/cycles_{cycles_to_use[0][-2:]}_to_{cycles_to_use[len(cycles_to_use)-1][-2:]}/tfx_threshold_{tfx_cutoff*100}_prct',
                 file_name=f'linear_mixed_effects_forest_plot',
             )
 
@@ -2122,7 +2149,7 @@ def main(args):
                 y_label='chr8 entropy',
                 model_result=model_result,
                 model_pval_col='cycle:Response',
-                output_path=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process24_outputs/{csv_path}/linear_mixed_effects_model/response_category_{response_category}/cycles_{cycles_to_use[0][-2:]}_to_{cycles_to_use[len(cycles_to_use)-1][-2:]}/tfx_threshold_{tfx_cutoff*100}_prct',
+                output_path=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process12_outputs/{csv_path}/linear_mixed_effects_model/response_category_{response_category}/cycles_{cycles_to_use[0][-2:]}_to_{cycles_to_use[len(cycles_to_use)-1][-2:]}/tfx_threshold_{tfx_cutoff*100}_prct',
                 file_name=f'linear_mixed_effects_spaghetti_plot',
             )
 
@@ -2136,7 +2163,7 @@ def main(args):
                 y_label='chr8 entropy',
                 model_result=model_result,
                 model_pval_col='cycle:Response',
-                output_path=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process24_outputs/{csv_path}/linear_mixed_effects_model/response_category_{response_category}/cycles_{cycles_to_use[0][-2:]}_to_{cycles_to_use[len(cycles_to_use)-1][-2:]}/tfx_threshold_{tfx_cutoff*100}_prct',
+                output_path=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process12_outputs/{csv_path}/linear_mixed_effects_model/response_category_{response_category}/cycles_{cycles_to_use[0][-2:]}_to_{cycles_to_use[len(cycles_to_use)-1][-2:]}/tfx_threshold_{tfx_cutoff*100}_prct',
                 file_name=f'linear_mixed_effects_split_spaghetti_plot',
             )
 
@@ -2150,7 +2177,7 @@ def main(args):
                 y_label='chr8 entropy',
                 model_result=model_result,
                 model_pval_col='cycle:Response',
-                output_path=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process24_outputs/{csv_path}/linear_mixed_effects_model/response_category_{response_category}/cycles_{cycles_to_use[0][-2:]}_to_{cycles_to_use[len(cycles_to_use)-1][-2:]}/tfx_threshold_{tfx_cutoff*100}_prct',
+                output_path=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process12_outputs/{csv_path}/linear_mixed_effects_model/response_category_{response_category}/cycles_{cycles_to_use[0][-2:]}_to_{cycles_to_use[len(cycles_to_use)-1][-2:]}/tfx_threshold_{tfx_cutoff*100}_prct',
                 file_name=f'linear_mixed_effects_split_violin_plot',
             )
 
@@ -2195,7 +2222,7 @@ def main(args):
             # Grabs and format HR and CI from cox model 
             cox_model_hr_text = f'N/a'
 
-            km_curve_output_path = f'entropy-analysis-{sequencing_type}-{metric_to_use}/process24_outputs/kaplan-meier-curves/entropy_km_curves/{csv_path}/tfx_threshold_{tfx_cutoff*100}_prct'
+            km_curve_output_path = f'entropy-analysis-{sequencing_type}-{metric_to_use}/process12_outputs/kaplan-meier-curves/entropy_km_curves/{csv_path}/tfx_threshold_{tfx_cutoff*100}_prct'
 
             master_sheet = input_map["pluvicto_master_sheet"][0]
             ctdna_sheet = input_map["all_samples_tfx_and_ctdnaq_sheet"][0]
@@ -2226,9 +2253,9 @@ def main(args):
             )
 
     # ==============
-    # Process 12:
+    # Process 13:
     # ==============
-    if args.process12 == "True":
+    if args.process13 == "True":
         # List of csv files to process
         entropy_csv_list = [
             "base_entropy_hn_cohort_normalized_per_chr_table",
@@ -2292,9 +2319,9 @@ def main(args):
             print(f'csv saved to: {output_path}/data-tables/entropy_deep_ichor_and_sv_types.csv')
 
     # ==============
-    # Process 13:
+    # Process 14:
     # ==============
-    if args.process13 == "True":
+    if args.process14 == "True":
         # List of csv files to process
         entropy_csv_list = [
             "base_entropy_hn_cohort_normalized_per_chr_table",
@@ -2347,7 +2374,7 @@ def main(args):
                     title='TFx vs ULP Entropy', 
                     xlabel='TFx', 
                     ylabel='Entropy', 
-                    out_dir=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process26_outputs/{csv_path}/TFx_vs_entropy_scatter_plots/tfx_threshold_{tfx_cutoff*100}_prct', 
+                    out_dir=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process14_outputs/{csv_path}/TFx_vs_entropy_scatter_plots/tfx_threshold_{tfx_cutoff*100}_prct', 
                     file_name="TFx_vs_ULP_entropy_scatter_plot", 
                     jitter=False
                 )
@@ -2360,36 +2387,10 @@ def main(args):
                     title='TFx vs Deep Ichor Entropy', 
                     xlabel='TFx', 
                     ylabel='Entropy', 
-                    out_dir=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process26_outputs/{csv_path}/TFx_vs_entropy_scatter_plots/tfx_threshold_{tfx_cutoff*100}_prct', 
+                    out_dir=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process14_outputs/{csv_path}/TFx_vs_entropy_scatter_plots/tfx_threshold_{tfx_cutoff*100}_prct', 
                     file_name="TFx_vs_deep_ichor_entropy_scatter_plot", 
                     jitter=False
                 )
-
-    # ==============
-    # Process 14:
-    # ==============
-    if args.process14 == "True":
-
-        metric_to_use = "Corrected_Copy_Number"
-
-        input_dirs = input_map[f"genomic_instability_{sequencing_type.split('_seg')[0]}_files"]
-
-        patient_df = create_copy_number_profile_dataframe(
-            dir_list=input_dirs, 
-            metric_to_use=metric_to_use, 
-            sequencing_type=sequencing_type
-        )
-
-        save_path = f'{output_path}/data-tables/cohort-copy-number-profiles-dataframes'
-        file_name = f'{sequencing_type}-{metric_to_use}-cohort-copy_number_profiles'
-
-        os.makedirs(save_path, exist_ok=True)
-
-        patient_df.to_pickle(
-            f'{save_path}/{file_name}.pkl',
-        )
-
-        print(f'Saved cohort copy number profiles to {save_path}/{file_name}.pkl')
         
     # ==============
     # Process 15:
@@ -2499,11 +2500,11 @@ def main(args):
                 })
                 model_result_df[['CI_lower', 'CI_upper']] = model_result.conf_int()
                 
-                model_result_df.to_csv(f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process28_outputs/{csv_path}/linear_mixed_effects_model/{gene}/response_category_{response_category}/cycles_{cycles_to_use[0][-2:]}_to_{cycles_to_use[len(cycles_to_use)-1][-2:]}/tfx_threshold_{tfx_cutoff*100}_prct/linear_mixed_effects_model_results.csv')
+                model_result_df.to_csv(f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process15_outputs/{csv_path}/linear_mixed_effects_model/{gene}/response_category_{response_category}/cycles_{cycles_to_use[0][-2:]}_to_{cycles_to_use[len(cycles_to_use)-1][-2:]}/tfx_threshold_{tfx_cutoff*100}_prct/linear_mixed_effects_model_results.csv')
 
                 linear_mixed_effects_forest_plot(
                     model_result=model_result,
-                    output_path=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process28_outputs/{csv_path}/linear_mixed_effects_model/{gene}/response_category_{response_category}/cycles_{cycles_to_use[0][-2:]}_to_{cycles_to_use[len(cycles_to_use)-1][-2:]}/tfx_threshold_{tfx_cutoff*100}_prct',
+                    output_path=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process15_outputs/{csv_path}/linear_mixed_effects_model/{gene}/response_category_{response_category}/cycles_{cycles_to_use[0][-2:]}_to_{cycles_to_use[len(cycles_to_use)-1][-2:]}/tfx_threshold_{tfx_cutoff*100}_prct',
                     file_name=f'linear_mixed_effects_forest_plot',
                 )
 
@@ -2517,7 +2518,7 @@ def main(args):
                     y_label=f'{gene} Copy Number',
                     model_result=model_result,
                     model_pval_col='cycle:Response',
-                    output_path=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process28_outputs/{csv_path}/linear_mixed_effects_model/{gene}/response_category_{response_category}/cycles_{cycles_to_use[0][-2:]}_to_{cycles_to_use[len(cycles_to_use)-1][-2:]}/tfx_threshold_{tfx_cutoff*100}_prct',
+                    output_path=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process15_outputs/{csv_path}/linear_mixed_effects_model/{gene}/response_category_{response_category}/cycles_{cycles_to_use[0][-2:]}_to_{cycles_to_use[len(cycles_to_use)-1][-2:]}/tfx_threshold_{tfx_cutoff*100}_prct',
                     file_name=f'linear_mixed_effects_spaghetti_plot',
                 )
 
@@ -2531,7 +2532,7 @@ def main(args):
                     y_label=f'{gene} Copy Number',
                     model_result=model_result,
                     model_pval_col='cycle:Response',
-                    output_path=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process28_outputs/{csv_path}/linear_mixed_effects_model/{gene}/response_category_{response_category}/cycles_{cycles_to_use[0][-2:]}_to_{cycles_to_use[len(cycles_to_use)-1][-2:]}/tfx_threshold_{tfx_cutoff*100}_prct',
+                    output_path=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process15_outputs/{csv_path}/linear_mixed_effects_model/{gene}/response_category_{response_category}/cycles_{cycles_to_use[0][-2:]}_to_{cycles_to_use[len(cycles_to_use)-1][-2:]}/tfx_threshold_{tfx_cutoff*100}_prct',
                     file_name=f'linear_mixed_effects_split_spaghetti_plot',
                 )
 
@@ -2545,7 +2546,7 @@ def main(args):
                     y_label=f'{gene} Copy Number',
                     model_result=model_result,
                     model_pval_col='cycle:Response',
-                    output_path=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process28_outputs/{csv_path}/linear_mixed_effects_model/{gene}/response_category_{response_category}/cycles_{cycles_to_use[0][-2:]}_to_{cycles_to_use[len(cycles_to_use)-1][-2:]}/tfx_threshold_{tfx_cutoff*100}_prct',
+                    output_path=f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process15_outputs/{csv_path}/linear_mixed_effects_model/{gene}/response_category_{response_category}/cycles_{cycles_to_use[0][-2:]}_to_{cycles_to_use[len(cycles_to_use)-1][-2:]}/tfx_threshold_{tfx_cutoff*100}_prct',
                     file_name=f'linear_mixed_effects_split_violin_plot',
                 )
 
@@ -2619,9 +2620,9 @@ def main(args):
 
             # If z_score is true save in different directory 
             if z_score:
-                file_path = f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process29_outputs/{csv_path}/cox_hardard_ratios/entropy_plots/tfx_threshold_{tfx_cutoff*100}_prct/zscored_data'
+                file_path = f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process16_outputs/{csv_path}/cox_hardard_ratios/entropy_plots/tfx_threshold_{tfx_cutoff*100}_prct/zscored_data'
             else:
-                file_path = f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process29_outputs/{csv_path}/cox_hardard_ratios/entropy_plots/tfx_threshold_{tfx_cutoff*100}_prct'
+                file_path = f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process16_outputs/{csv_path}/cox_hardard_ratios/entropy_plots/tfx_threshold_{tfx_cutoff*100}_prct'
 
             file_name=f'all_chromosomes_entropy_cox_model_forest_plot_no_FDR'
 
@@ -2674,9 +2675,9 @@ def main(args):
 
             # If z_score is true save in different directory 
             if z_score:
-                file_path = f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process29_outputs/{csv_path}/cox_hardard_ratios/entropy_plots/tfx_threshold_{tfx_cutoff*100}_prct/zscored_data'
+                file_path = f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process16_outputs/{csv_path}/cox_hardard_ratios/entropy_plots/tfx_threshold_{tfx_cutoff*100}_prct/zscored_data'
             else:
-                file_path = f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process29_outputs/{csv_path}/cox_hardard_ratios/entropy_plots/tfx_threshold_{tfx_cutoff*100}_prct'
+                file_path = f'{output_path}/entropy-analysis-{sequencing_type}-Corrected_Copy_Number/process16_outputs/{csv_path}/cox_hardard_ratios/entropy_plots/tfx_threshold_{tfx_cutoff*100}_prct'
 
             file_name=f'grouped_entropy_cox_model_forest_plot_no_FDR'
 
@@ -2695,20 +2696,20 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Plots tumor fraction vs fraction genome altered.")
 
-    parser.add_argument("--process1", default="False", help="Entropy per chromosome data processing.")
-    parser.add_argument("--process2", default="False", help="Entropy per chromosome data plotting.")
-    parser.add_argument("--process3", default="False", help="Entropy per chromosome data qualitative analysis.")
-    parser.add_argument("--process4", default="False", help="Entropy per chromosome data cox model analysis.")
-    parser.add_argument("--process5", default="False", help="Chromosome 8 complex sv events and entropy visualization.")
-    parser.add_argument("--process6", default="False", help="Chromosome 8 Gene Matrix and entropy correlation (logistic regression).")
-    parser.add_argument("--process7", default="False", help="Chromosome 8 complex sv analysis (logistic regression).")
-    parser.add_argument("--process8", default="False", help="Comparing chr8 survival analysis between different datasets.")
-    parser.add_argument("--process9", default="False", help="Chromosome 8 complex sv analysis (linear regression).")
-    parser.add_argument("--process10", default="False", help="Chromosome 8 Gene Matrix and entropy correlation (linear regression).")
-    parser.add_argument("--process11", default="False", help="Linear mixed effects model for entropy.")
-    parser.add_argument("--process12", default="False", help="Creating Manuscript supplemental tables.")
-    parser.add_argument("--process13", default="False", help="Entropy Visualizations - extention of process3.")
-    parser.add_argument("--process14", default="False", help="Creates and saves look up table for copy number profiles.")
+    parser.add_argument("--process1", default="False", help="Creates and saves look up table for copy number profiles.")
+    parser.add_argument("--process2", default="False", help="Entropy per chromosome data processing.")
+    parser.add_argument("--process3", default="False", help="Entropy per chromosome data plotting.")
+    parser.add_argument("--process4", default="False", help="Entropy per chromosome data qualitative analysis.")
+    parser.add_argument("--process5", default="False", help="Entropy per chromosome data cox model analysis.")
+    parser.add_argument("--process6", default="False", help="Chromosome 8 complex sv events and entropy visualization.")
+    parser.add_argument("--process7", default="False", help="Chromosome 8 Gene Matrix and entropy correlation (logistic regression).")
+    parser.add_argument("--process8", default="False", help="Chromosome 8 complex sv analysis (logistic regression).")
+    parser.add_argument("--process9", default="False", help="Comparing chr8 survival analysis between different datasets.")
+    parser.add_argument("--process10", default="False", help="Chromosome 8 complex sv analysis (linear regression).")
+    parser.add_argument("--process11", default="False", help="Chromosome 8 Gene Matrix and entropy correlation (linear regression).")
+    parser.add_argument("--process12", default="False", help="Linear mixed effects model for entropy.")
+    parser.add_argument("--process13", default="False", help="Creating Manuscript supplemental tables.")
+    parser.add_argument("--process14", default="False", help="Entropy Visualizations - extention of process3.")
     parser.add_argument("--process15", default="False", help="Linear mixed effects model for specific genes CN increase/decrease over time.")
     parser.add_argument("--process16", default="False", help="Forest plot with all chromosomes on it.")
 
